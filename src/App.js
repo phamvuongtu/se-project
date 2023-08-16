@@ -1,9 +1,9 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-// import Dashboard from "./components/Admin/Dashboard";
-import Dashboard from "./components/Staff/Dashboard";
-// import Layout from "./components/Admin/Layout";
-import Layout from "./components/Staff/Layout";
+import Dashboard from "./components/Admin/Dashboard";
+// import Dashboard from "./components/Staff/Dashboard";
+import Layout from "./components/Admin/Layout";
+// import Layout from "./components/Staff/Layout";
 import LoginPage from "./components/LoginPage";
 import Staff from "./components/Admin/Staff";
 import Shipper from "./components/Admin/Shipper";
