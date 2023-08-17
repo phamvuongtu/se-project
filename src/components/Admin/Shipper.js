@@ -45,7 +45,7 @@ const Shipper = () => {
       try {
         const newShipper = {name, phoneNumber };
         const response = await axios.post(
-          "http://localhost:4000/create",
+          "http://localhost:4000/shipper/create",
           newShipper
         );
         
@@ -64,7 +64,7 @@ const Shipper = () => {
       try {
         const updatedShipper = {name, phoneNumber };
         await axios.put(
-          `http://localhost:4000/update/${shipperList[editIndex].shipperID}`,
+          `http://localhost:4000/shipper/update/${shipperList[editIndex].shipperID}`,
           updatedShipper
         );               
         const updatedShipperList = shipperList.map((shipper, index) =>
@@ -92,7 +92,7 @@ const Shipper = () => {
   const handleDelete = async (shipperID) => {
     try {
       // Fetch initial shipper data
-      await axios.delete(`http://localhost:4000/delete/${shipperID}`);
+      await axios.delete(`http://localhost:4000/shipper/delete/${shipperID}`);
       const updatedShipperList = shipperList.filter(
         (shipper) => shipper.shipperID !== shipperID
       );
@@ -105,7 +105,7 @@ const Shipper = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:4000/all")
+      .get("http://localhost:4000/shipper/all")
       .then((response) => {
         setShipperList(response.data);
       })

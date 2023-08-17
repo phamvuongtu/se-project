@@ -3,13 +3,8 @@ const db = require("../database");
 
 const shipperController = express.Router();
 
-// Root URL route
-shipperController.get("/", (req, res) => {
-  res.send("hello world");
-});
-
 // Route to handle creating a new shipper
-shipperController.post("/create", (req, res) => {
+shipperController.post("/shipper/create", (req, res) => {
   const { name, phoneNumber } = req.body;
 
   // Insert the shipper into the database
@@ -33,7 +28,7 @@ shipperController.post("/create", (req, res) => {
 });
 
 // Route to fetch all shippers
-shipperController.get("/all", (req, res) => {
+shipperController.get("/shipper/all", (req, res) => {
   // Fetch all shippers from the database
   db.query("SELECT * FROM Shipper", (err, result) => {
     if (err) {
@@ -46,7 +41,7 @@ shipperController.get("/all", (req, res) => {
 });
 
 // Route to handle deleting a shipper
-shipperController.delete("/delete/:shipperID", (req, res) => {
+shipperController.delete("/shipper/delete/:shipperID", (req, res) => {
   const shipperID = req.params.shipperID;
 
   // Delete the shipper from the database
@@ -65,7 +60,7 @@ shipperController.delete("/delete/:shipperID", (req, res) => {
 });
 
 // Route to handle updating a shipper
-shipperController.put("/update/:shipperID", (req, res) => {
+shipperController.put("/shipper/update/:shipperID", (req, res) => {
   const shipperID = req.params.shipperID;
   const { name, phoneNumber } = req.body;
 
