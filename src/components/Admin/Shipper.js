@@ -164,7 +164,7 @@ const Shipper = () => {
           </thead>
           <tbody>
             {shipperList.length > 0 &&
-              shipperList.slice(0, 15).map((shipper, index) => (
+              shipperList.slice(0, 100).map((shipper, index) => (
                 <tr
                   key={index}
                   className={index % 2 === 0 ? "bg-gray-100" : ""}
