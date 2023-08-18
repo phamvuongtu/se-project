@@ -20,6 +20,13 @@ app.use(menuController);
 const orderController = require("./controllers/orderController");
 app.use(orderController);
 
+const staffController = require("./controllers/staffController");
+app.use(staffController);
+
+const customerController = require("./controllers/customerController");
+app.use(customerController);
+
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

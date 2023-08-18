@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
+import axios from "axios";
 
 const Staff = () => {
   const [staffList, setStaffList] = useState([]);
@@ -16,12 +17,12 @@ const Staff = () => {
     return /^[A-Za-zÀ-ỹ\s]+$/.test(input);
   };
 
-  const generateStaffID = () => {
-    const currentCount = staffList.length + 1;
-    return `St${currentCount.toString().padStart(3, '0')}`;
-  };
+  // const generateStaffID = () => {
+  //   const currentCount = staffList.length + 1;
+  //   return `St${currentCount.toString().padStart(3, '0')}`;
+  // };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name || !email || !phoneNumber) {
@@ -40,16 +41,40 @@ const Staff = () => {
     }
 
     if (editIndex === -1) {
-      const newStaff = { staffID: generateStaffID(), name, email, phoneNumber };
-      setStaffList([...staffList, newStaff]);
+      try {
+        const newStaff = {name,email, phoneNumber };
+        const response = await axios.post(
+          "http://localhost:4000/staff/create",
+          newStaff
+        );
+        
+        const insertedStaff = {
+          staffID: response.data.staffID,
+          name: response.data.name,
+          email: response.data.email,
+          phoneNumber: response.data.phoneNumber,
+        };
+        // Update the state
+        setStaffList((prevStaffList) => [...prevStaffList, insertedStaff]);
+      } catch (error) {
+        console.error("Error adding staff:", error);
+      }
     } else {
-      const updatedStaffList = staffList.map((staff, index) =>
-        index === editIndex
-          ? { ...staff, name, email, phoneNumber }
-          : staff
-      );
-      setStaffList(updatedStaffList);
-      setEditIndex(-1);
+      //Update existing staff
+      try {
+        const updatedStaff = {name, email, phoneNumber };
+        await axios.put(
+          `http://localhost:4000/staff/update/${staffList[editIndex].staffID}`,
+          updatedStaff
+        );               
+        const updatedStaffList = staffList.map((staff, index) =>
+          index === editIndex ? { ...staff, name, email, phoneNumber } : staff
+        );
+        setStaffList(updatedStaffList);
+        setEditIndex(-1);
+      } catch (error) {
+        console.error("Error updating staff:", error);
+      }
     }
 
     setName('');
@@ -66,11 +91,28 @@ const Staff = () => {
     setEditIndex(index);
   };
 
-  const handleDelete = (index) => {
-    const updatedStaffList = staffList.filter((_, i) => i !== index);
-    setStaffList(updatedStaffList);
+  const handleDelete = async (staffID) => {
+    try {
+      // Fetch initial staff data
+      await axios.delete(`http://localhost:4000/staff/delete/${staffID}`);
+      const updatedStaffList = staffList.filter(
+        (staff) => staff.staffID !== staffID
+      );
+      setStaffList(updatedStaffList);
+    } catch (error) {
+      console.error("Error deleting staff:", error);
+    }
   };
-
+  useEffect(() => {
+    axios
+      .get("http://localhost:4000/staff/all")
+      .then((response) => {
+        setStaffList(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching staff data:", error);
+      });
+  }, []);
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4">Staff Management</h1>
@@ -130,7 +172,7 @@ const Staff = () => {
             </tr>
           </thead>
           <tbody>
-            {staffList.slice(0, 15).map((staff, index) => (
+            {staffList.slice(0, 200).map((staff, index) => (
               <tr key={index} className={(index % 2 === 0) ? "bg-gray-100" : ""}>
                 <td className="px-4 py-2">{staff.staffID}</td>
                 <td className="px-4 py-2">{staff.name}</td>
@@ -144,7 +186,7 @@ const Staff = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(index)}
+                    onClick={() => handleDelete(staff.staffID)}
                     className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
                   >
                     Delete

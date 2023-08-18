@@ -30,6 +30,7 @@ const Menu = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
 
     if (!name || !price) {
       setErrorMsg("Name and Price are required fields");
@@ -44,36 +45,29 @@ const Menu = () => {
     const requestData = {
       name,
       description,
-      size, 
-      price,  
+      size,
+      price,
     };
-    
 
     try {
       if (editIndex === -1) {
         await axios.post("http://localhost:4000/product/create", requestData);
       } else {
         const productID = productList[editIndex].productID;
-        await axios.put(
-          `http://localhost:4000/product/update/${productID}`,
-          requestData
-        );
-        
-        // After updating the Product table, update the FProduct entry
-        const fProductData = {
+        const updatedData = {
+          name,
+          description,
           size: size !== null ? size : "", // Send empty string if size is null
-          price: price !== null ? parseFloat(price) : null, // Send null if price is null
+          price: price !== "" ? parseFloat(price) : null, // Send null if price is empty
         };
         await axios.put(
-          `http://localhost:4000/product/update-fproduct/${productID}`,
-          fProductData
+          `http://localhost:4000/product/update/${productID}`,
+          updatedData
         );
       }
 
-      // Delay for a short period before fetching the updated product list
-      setTimeout(() => {
-        fetchProducts();
-      }, 500); // Adjust the delay as needed
+      // Fetch the updated product list after updating
+      await fetchProducts();
 
       setName("");
       setDescription("");

@@ -4,105 +4,91 @@ const db = require("../database");
 const orderController = express.Router();
 
 // Route to create a new order
-orderController.post('/order/create', async (req, res) => {
-    try {
-      const {
-        customerID,
-        shipperID,
-        shipType,
-        totalPrice,
-        status,
-        customerName,
-        phoneNumber,
-        address,
-        deliveryNote,
-        orderRows,
-      } = req.body;
+// orderController.post("/order/create", async (req, res) => {
+//   try {
+//     const {
+//       customerID,
+//       shipperID,
+//       shipType,
+//       totalPrice,
+//       status,
+//       customerName,
+//       phoneNumber,
+//       address,
+//       deliveryNote,
+//       orderRows,
+//     } = req.body;
+//     const orderTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
+//     const orderInsertQuery = `INSERT INTO Order_Info (customerID, shipperID, shipType, totalPrice, status, customerName, phoneNumber, address, deliveryNote, order_time) 
+//     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   
-      const orderTime = new Date().toISOString();
+//   const orderInsertValues = [
+//     customerID,
+//     shipperID,
+//     shipType,
+//     orderTime,
+//     totalPrice,
+//     status,
+//     customerName,
+//     phoneNumber,
+//     address,
+//     deliveryNote,
+//   ];
   
-      const orderInsertQuery = `INSERT INTO Order_Info (customerID, shipperID, shipType, totalPrice, status, customerName, phoneNumber, address, deliveryNote, order_time) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-  
-      const orderInsertValues = [
-        customerID,
-        shipperID,
-        shipType,
-        totalPrice,
-        status,
-        customerName,
-        phoneNumber,
-        address,
-        deliveryNote,
-        orderTime,
-      ];
-  
-      const result = await db.query(orderInsertQuery, orderInsertValues);
-      const orderID = result.insertId;
-  
-      const orderItemsInsertQuery = `INSERT INTO Order_Supply (fProductID, orderID, quantity, fever) VALUES (?, ?, ?, ?)`;
-  
-      for (const orderRow of orderRows) {
-        const { fProductID, quantity, fever } = orderRow;
-        await db.query(orderItemsInsertQuery, [fProductID, orderID, quantity, fever]);
-      }
-  
-      res.status(201).json({ orderID });
-    } catch (error) {
-      console.error('Error creating order:', error);
-      res.status(500).send('Error creating order');
-    }
-  });
+//     const result = await db.query(orderInsertQuery, orderInsertValues);
+//     const orderID = result.insertId;
 
-// Route to fetch all orders
-orderController.get("/order/all", async (req, res) => {
-    try {
-      const query = "SELECT * FROM Order_Info";
-      const [result] = await db.query(query); // Destructure the result
-      
-      const orders = result.map(row => ({
-        orderID: row.orderID,
-        customerID: row.customerID,
-        shipperID: row.shipperID,
-        shipType: row.shipType,
-        order_time: row.order_time.toISOString(), // Format the datetime
-        totalPrice: row.totalPrice,
-        status: row.Status,
-        customerName: row.customerName,
-        phoneNumber: row.phoneNumber,
-        address: row.address,
-        deliveryNote: row.deliveryNote
-      }));
-      
-      res.json(orders);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      res.status(500).send("Error fetching orders");
-    }
-  });
+//     const orderItemsInsertQuery = `INSERT INTO Order_Supply (fProductID, orderID, quantity, fever) VALUES (?, ?, ?, ?)`;
 
-// Route to update an order
-orderController.put("/order/update/:orderID", async (req, res) => {
+//     for (const orderRow of orderRows) {
+//       const { fProductID, quantity, fever } = orderRow;
+//       await db.query(orderItemsInsertQuery, [
+//         fProductID,
+//         orderID,
+//         quantity,
+//         fever,
+//       ]);
+//     }
+
+//     res.status(201).json({ orderID });
+//   } catch (error) {
+//     console.error("Error creating order:", error);
+//     res.status(500).send("Error creating order");
+//   }
+// });
+orderController.post("/order/create", async (req, res) => {
   try {
-    const orderID = req.params.orderID;
     const {
       customerID,
       shipperID,
       shipType,
-      totalPrice,
       status,
       customerName,
       phoneNumber,
       address,
       deliveryNote,
-      orderRows
+      orderRows,
     } = req.body;
 
-    // Update the order in the Order_Info table
-    const orderUpdateQuery = `UPDATE Order_Info SET customerID = ?, shipperID = ?, shipType = ?, totalPrice = ?, status = ?, 
-      customerName = ?, phoneNumber = ?, address = ?, deliveryNote = ? WHERE orderID = ?`;
+    let totalPrice = 0;
+    for (const orderRow of orderRows) {
+      const fProductID = orderRow.fProductID;
+      const getPriceQuery = `SELECT price FROM FProduct WHERE fProductID = ?`;
+      const priceResult = await db.query(getPriceQuery, fProductID);
 
-    const orderUpdateValues = [
+      if (priceResult.length === 0) {
+        return res.status(400).send(`Price for fProductID ${fProductID} not found.`);
+      }
+
+      const price = priceResult[0].price;
+      totalPrice += price * orderRow.quantity;
+    }
+
+    const orderTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const orderInsertQuery = `INSERT INTO Order_Info (customerID, shipperID, shipType, totalPrice, status, customerName, phoneNumber, address, deliveryNote, order_time) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  
+    const orderInsertValues = [
       customerID,
       shipperID,
       shipType,
@@ -112,26 +98,97 @@ orderController.put("/order/update/:orderID", async (req, res) => {
       phoneNumber,
       address,
       deliveryNote,
-      orderID
+      orderTime,
     ];
+  
+    const result = await db.query(orderInsertQuery, orderInsertValues);
+    const orderID = result.insertId;
 
-    await db.query(orderUpdateQuery, orderUpdateValues);
-
-    // Update or insert order items in the Order_Supply table
-    const orderItemsUpdateQuery = `INSERT INTO Order_Supply (fProductID, orderID, quantity, fever) 
-      VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), fever = VALUES(fever)`;
+    const orderItemsInsertQuery = `INSERT INTO Order_Supply (fProductID, orderID, quantity, fever) VALUES (?, ?, ?, ?)`;
 
     for (const orderRow of orderRows) {
       const { fProductID, quantity, fever } = orderRow;
-      await db.query(orderItemsUpdateQuery, [fProductID, orderID, quantity, fever]);
+      await db.query(orderItemsInsertQuery, [
+        fProductID,
+        orderID,
+        quantity,
+        fever,
+      ]);
     }
 
-    res.send("Order updated successfully");
+    res.status(201).json({ orderID });
   } catch (error) {
-    console.error("Error updating order:", error);
-    res.status(500).send("Error updating order");
+    console.error("Error creating order:", error);
+    res.status(500).send("Error creating order");
   }
 });
+
+// Route to fetch all orders
+// orderController.get("/order/all", (req, res) => {
+//   // Fetch all orders from the database
+//   db.query("SELECT * FROM Order_Info", (err, result) => {
+//     if (err) {
+//       console.log(err);
+//       res.status(500).send("Error fetching orders");
+//     } else {
+//       const orders = result.map((row) => ({
+//         orderID: row.orderID,
+//         customerID: row.customerID,
+//         shipperID: row.shipperID,
+//         shipType: row.shipType,
+//         order_time: row.order_time.toISOString(),
+//         totalPrice: row.totalPrice,
+//         status: row.Status,
+//         customerName: row.customerName,
+//         phoneNumber: row.phoneNumber,
+//         address: row.address,
+//         deliveryNote: row.deliveryNote,
+//       }));
+
+//       res.json(orders);
+//     }
+//   });
+// });
+orderController.get("/order/all", async (req, res) => {
+  try {
+    // Fetch all orders from the database
+    const ordersQuery = "SELECT * FROM Order_Info";
+    const ordersResult = await db.query(ordersQuery);
+
+    if (!Array.isArray(ordersResult)) {
+      console.error("Orders result is not an array:", ordersResult);
+      res.status(500).send("Error fetching orders");
+      return;
+    }
+
+    const orders = [];
+
+    for (const orderRow of ordersResult) {
+      const order = {
+        orderID: orderRow.orderID,
+        customerID: orderRow.customerID,
+        shipperID: orderRow.shipperID,
+        shipType: orderRow.shipType,
+        order_time: orderRow.order_time.toISOString(),
+        totalPrice: orderRow.totalPrice,
+        status: orderRow.Status,
+        customerName: orderRow.customerName,
+        phoneNumber: orderRow.phoneNumber,
+        address: orderRow.address,
+        deliveryNote: orderRow.deliveryNote,
+        orderRows: [],
+      };
+
+      orders.push(order);
+    }
+
+    res.json(orders);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).send("Error fetching orders");
+  }
+});
+
 
 // Route to delete an order
 orderController.delete("/order/delete/:orderID", async (req, res) => {

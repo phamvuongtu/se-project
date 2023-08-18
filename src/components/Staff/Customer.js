@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
+import axios from 'axios';
 
 const Customer = () => {
   const [customerList, setCustomerList] = useState([]);
@@ -8,12 +9,7 @@ const Customer = () => {
   const [password, setPassword] = useState('');
   const [address, setAddress] = useState('');
   const [editIndex, setEditIndex] = useState(-1);
-
-  const generateCustomerID = () => {
-    const customerCount = customerList.length + 1;
-    const paddedCount = customerCount.toString().padStart(3, '0');
-    return `Cu${paddedCount}`;
-  };
+  const [errorMsg, setErrorMsg] = useState('');
 
   const isValidPhoneNumber = (input) => {
     return /^0\d{9}$/.test(input);
@@ -23,38 +19,63 @@ const Customer = () => {
     return /^[A-Za-zÀ-ỹ\s]+$/.test(input);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !address) {
+    if (!name || !email || !password || !address || !phoneNumber) {
       return;
     }
 
     if (!isValidPhoneNumber(phoneNumber)) {
+      setErrorMsg('Invalid phone number format (should start with 0 and have 10 digits)');
       return;
     }
 
     if (!isValidName(name)) {
+      setErrorMsg('Invalid name format (should contain only characters)');
       return;
     }
 
-    const newCustomer = {
-      customerID: generateCustomerID(),
-      name,
-      phoneNumber,
-      email,
-      password,
-      address
-    };
-
-    if (editIndex === -1) {
-      setCustomerList([...customerList, newCustomer]);
+   
+    if (editIndex === -1){
+      try {
+        const newCustomer = {name, phoneNumber, email, password, address};
+        const response = await axios.post(
+          "http://localhost:4000/customer/create",
+          newCustomer
+        );
+        
+        const insertedCustomer = {
+          customerID: response.data.customerID,
+          name: response.data.name,
+          phoneNumber: response.data.phoneNumber,
+          email: response.data.email,
+          password: response.data.password,
+          address: response.data.address,
+          rankID: 1,
+          allSpend: 0
+        };
+        // Update the state
+        setCustomerList((prevCustomerList) => [...prevCustomerList, insertedCustomer]);
+      } catch (error) {
+        console.error("Error adding customer:", error);
+      }
     } else {
-      const updatedCustomerList = customerList.map((customer, index) =>
-        index === editIndex ? newCustomer : customer
-      );
-      setCustomerList(updatedCustomerList);
-      setEditIndex(-1);
+      //Update existing staff
+      try {
+        const updatedCustomer = {name, email, phoneNumber,password,address };
+        await axios.put(
+          `http://localhost:4000/customer/update/${customerList[editIndex].customerID}`,
+          updatedCustomer
+        );               
+        const updatedCustomerList = customerList.map((customer, index) =>
+          index === editIndex ? { ...customer, name, email, phoneNumber, password, address } : customer
+        );
+        setCustomerList(updatedCustomerList);
+        setEditIndex(-1);
+      } catch (error) {
+        console.error("Error updating customer:", error);
+      }
     }
 
     // Clear form fields
@@ -75,11 +96,28 @@ const Customer = () => {
     setEditIndex(index);
   };
 
-  const handleDelete = (index) => {
-    const updatedCustomerList = customerList.filter((_, i) => i !== index);
-    setCustomerList(updatedCustomerList);
+  const handleDelete = async (customerID) => {
+    try {
+      // Fetch initial customer data
+      await axios.delete(`http://localhost:4000/customer/delete/${customerID}`);
+      const updatedCustomerList = customerList.filter(
+        (customer) => customer.customerID !== customerID
+      );
+      setCustomerList(updatedCustomerList);
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+    }
   };
-
+  useEffect(() => {
+    axios
+      .get("http://localhost:4000/customer/all")
+      .then((response) => {
+        setCustomerList(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching customer data:", error);
+      });
+  }, []);
   return (
     <div className="container mx-auto p-4">
       {/* Form */}
@@ -132,6 +170,7 @@ const Customer = () => {
             />
           </div>
         </div>
+        {errorMsg && <p className="text-red-500">{errorMsg}</p>}
         <button
           type="submit"
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
@@ -165,10 +204,10 @@ const Customer = () => {
                 <td className="px-4 py-2">{customer.name}</td>
                 <td className="px-4 py-2">{customer.phoneNumber}</td>
                 <td className="px-4 py-2">{customer.email}</td>
-                <td className="px-4 py-2">{customer.password}</td>
+                <td className="px-4 py-2" style={{ maxWidth: '200px', wordWrap: 'break-word' }} >{customer.password}</td>
                 <td className="px-4 py-2">{customer.address}</td>
-                <td className="px-4 py-2">Rank</td>
-                <td className="px-4 py-2">Total Amount</td>
+                <td className="px-4 py-2">{customer.rankID}</td>
+                <td className="px-4 py-2">{customer.allSpend}</td>
                 <td className="px-4 py-2">
                   <button
                     onClick={() => handleEdit(index)}
@@ -177,7 +216,7 @@ const Customer = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(index)}
+                    onClick={() => handleDelete(customer.customerID)}
                     className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
                   >
                     Delete

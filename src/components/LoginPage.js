@@ -1,19 +1,33 @@
 import React, { useState } from "react";
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-
-  const handleFormSubmit = (e) => {
+  const navigate = useNavigate()
+  const handleFormSubmit = async(e) => {
     e.preventDefault();
-
+    const data={email,password}
+    try {
+      const response = await axios.post("http://localhost:4000/auth/login", data);
+      console.log('check',response.data.userData.errCode)
+      if(response.data.userData.errCode === 0){
+        navigate("/")
+      }
+      // Xử lý dữ liệu trả về từ response ở đây
+    } catch (error) {
+      // Xử lý lỗi ở đây
+    } 
     if (!email || !password) {
       setErrorMessage("Email, Password are required fields");
       return;
     }
-    setEmail("");
-    setPassword("");
+    
+    //console.log(email)
+    // setEmail("");
+    // setPassword("");
     setErrorMessage("");
   };
 
@@ -37,7 +51,7 @@ const LoginPage = () => {
             </h1>
             <form
               className="space-y-4 md:space-y-6"
-              action="/auth/login"
+              action="http://localhost:4000/auth/login"
               method="post"
               onSubmit={handleFormSubmit}
             >

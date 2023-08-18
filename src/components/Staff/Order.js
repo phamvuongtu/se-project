@@ -1,72 +1,84 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-  const Orders = () => {
-    const [orderList, setOrderList] = useState([]);
-    const [customerID, setCustomerID] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [orderType, setOrderType] = useState('In-store');
-    const [shippingAddress, setShippingAddress] = useState('');
-    const [shipperID, setShipperID] = useState('');
-    const [status, setStatus] = useState('Prepare');
-    const [orderRows, setOrderRows] = useState([{ fProductID: '', quantity: '', fever: '' }]);
-    const [editIndex, setEditIndex] = useState(-1);
-  
-    const fetchOrderList = async () => {
-      try {
-        const response = await axios.get('http://localhost:4000/order/all');
-        setOrderList(response.data);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      }
+const Orders = () => {
+  const [orderList, setOrderList] = useState([]);
+  const [customerID, setCustomerID] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [orderType, setOrderType] = useState("In-store");
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [shipperID, setShipperID] = useState("");
+  const [status, setStatus] = useState("Prepare");
+  const [shipType, setShipType] = useState("Normal");
+  const [deliveryNote, setDeliveryNote] = useState("");
+
+  const [orderRows, setOrderRows] = useState([
+    { fProductID: "", quantity: "", fever: "" },
+  ]);
+  const [editIndex, setEditIndex] = useState(-1);
+
+  const fetchOrderList = async () => {
+    try {
+      const response = await axios.get("http://localhost:4000/order/all");
+      console.log("Fetched data:", response.data);
+      setOrderList(response.data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrderList();
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const newOrder = {
+      customerID,
+      shipperID: orderType === "Delivery" ? shipperID : null,
+      shipType: orderType === "Delivery" ? shipType : "",
+      totalPrice: 0,
+      status,
+      customerName: "customerName", // Add customer name
+      phoneNumber: "0123456789",
+      address: orderType === "Delivery" ? shippingAddress : "",
+      deliveryNote: deliveryNote, // Add delivery note
+      orderRows: orderRows.filter((row) => row.fProductID !== ""),
     };
-  
-    useEffect(() => {
+
+    try {
+      if (editIndex === -1) {
+        await axios.post("http://localhost:4000/order/create", newOrder);
+      } else {
+        await axios.put(
+          `http://localhost:4000/order/update/${orderList[editIndex].orderID}`,
+          newOrder
+        );
+      }
+
+      resetForm();
       fetchOrderList();
-    }, []);
-  
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-  
-      const newOrder = {
-        customerID,
-        shipperID: orderType === 'Delivery' ? shipperID : null,
-        shipType: orderType,
-        totalPrice: 0, // You need to calculate the total price
-        status,
-        customerName: '', // Add customer name
-        phoneNumber,
-        address: orderType === 'Delivery' ? shippingAddress : '',
-        deliveryNote: '', // Add delivery note
-        orderRows: orderRows.filter(row => row.fProductID !== ''),
-      };
-  
-      try {
-        if (editIndex === -1) {
-          await axios.post('http://localhost:4000/order/create', newOrder);
-        } else {
-          await axios.put(`http://localhost:4000/order/update/${orderList[editIndex].orderID}`, newOrder);
-        }
-  
-        resetForm();
-        fetchOrderList();
-      } catch (error) {
-        console.error('Error submitting order:', error);
-      }
-    };
-  
-    const resetForm = () => {
-      setCustomerID('');
-      setPhoneNumber('');
-      setOrderType('In-store');
-      setShippingAddress('');
-      setShipperID('');
-      setStatus('Prepare');
-      setOrderRows([{ fProductID: '', quantity: '', fever: '' }]);
-    };
+    } catch (error) {
+      console.error("Error submitting order:", error);
+    }
+  };
+
+  const resetForm = () => {
+    setCustomerID("");
+    setPhoneNumber("");
+    setOrderType("In-store");
+    setShippingAddress("");
+    setShipperID("");
+    setStatus("Prepare");
+    setOrderRows([{ fProductID: "", quantity: "", fever: "" }]);
+  };
 
   const handleAddRow = () => {
-    setOrderRows([...orderRows, { drink: '', size: 'S', topping: '', quantity: '' }]);
+    setOrderRows([
+      ...orderRows,
+      { drink: "", size: "S", topping: "", quantity: "" },
+    ]);
   };
 
   const handleDeleteRow = (index) => {
@@ -127,9 +139,11 @@ import axios from 'axios';
               <option value="Delivery">Delivery</option>
             </select>
           </div>
-          {orderType === 'Delivery' && (
+          {orderType === "Delivery" && (
             <div>
-              <label className="block mb-2 font-semibold">Shipping Address:</label>
+              <label className="block mb-2 font-semibold">
+                Shipping Address:
+              </label>
               <input
                 type="text"
                 value={shippingAddress}
@@ -138,7 +152,7 @@ import axios from 'axios';
               />
             </div>
           )}
-          {orderType === 'Delivery' && (
+          {orderType === "Delivery" && (
             <div>
               <label className="block mb-2 font-semibold">Shipper ID:</label>
               <input
@@ -149,6 +163,20 @@ import axios from 'axios';
               />
             </div>
           )}
+          {orderType === "Delivery" && (
+            <div>
+              <label className="block mb-2 font-semibold">Shipper Type:</label>
+              <select
+                value={shipType}
+                onChange={(e) => setShipType(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="Normal">Normal</option>
+                <option value="Fast">Fast</option>
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block mb-2 font-semibold">Status:</label>
             <select
@@ -166,46 +194,35 @@ import axios from 'axios';
             <div key={index} className="col-span-2">
               <div className="grid grid-cols-4 gap-4 mb-2">
                 <div>
-                  <label className="block mb-2 font-semibold">Drink:</label>
+                  <label className="block mb-2 font-semibold">
+                    FProduct ID:
+                  </label>
                   <input
                     type="text"
-                    value={row.drink}
+                    value={row.fProductID}
                     onChange={(e) => {
                       const updatedRows = [...orderRows];
-                      updatedRows[index].drink = e.target.value;
+                      updatedRows[index].fProductID = e.target.value;
                       setOrderRows(updatedRows);
                     }}
                     className="w-full px-3 py-2 border rounded-lg"
                   />
                 </div>
+
                 <div>
-                  <label className="block mb-2 font-semibold">Size:</label>
+                  <label className="block mb-2 font-semibold">Fever:</label>
                   <select
-                    value={row.size}
+                    value={row.fever}
                     onChange={(e) => {
                       const updatedRows = [...orderRows];
-                      updatedRows[index].size = e.target.value;
+                      updatedRows[index].fever = e.target.value;
                       setOrderRows(updatedRows);
                     }}
                     className="w-full px-3 py-2 border rounded-lg"
                   >
-                    <option value="S">S</option>
-                    <option value="M">M</option>
-                    <option value="L">L</option>
+                    <option value="None">None</option>
+                    <option value="Yes">Yes</option>
                   </select>
-                </div>
-                <div>
-                  <label className="block mb-2 font-semibold">Topping:</label>
-                  <input
-                    type="text"
-                    value={row.topping}
-                    onChange={(e) => {
-                      const updatedRows = [...orderRows];
-                      updatedRows[index].topping = e.target.value;
-                      setOrderRows(updatedRows);
-                    }}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
                 </div>
                 <div>
                   <label className="block mb-2 font-semibold">Quantity:</label>
@@ -217,6 +234,17 @@ import axios from 'axios';
                       updatedRows[index].quantity = e.target.value;
                       setOrderRows(updatedRows);
                     }}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 font-semibold">
+                    Delivery Note:
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryNote}
+                    onChange={(e) => setDeliveryNote(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg"
                   />
                 </div>
@@ -246,7 +274,7 @@ import axios from 'axios';
               type="submit"
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
-              {editIndex !== -1 ? 'Save' : 'Create Order'}
+              {editIndex !== -1 ? "Save" : "Create Order"}
             </button>
           </div>
         </div>
@@ -263,17 +291,30 @@ import axios from 'axios';
               <th className="px-4 py-2">Shipper ID</th>
               <th className="px-4 py-2">Creation Time</th>
               <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2">Order Details</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {orderList.map((order, index) => (
-              <tr key={index} className={(index % 2 === 0) ? "bg-gray-100" : ""}>
+              <tr key={index} className={index % 2 === 0 ? "bg-gray-100" : ""}>
                 <td className="px-4 py-2">{order.orderID}</td>
                 <td className="px-4 py-2">{order.customerID}</td>
                 <td className="px-4 py-2">{order.shipperID}</td>
-                <td className="px-4 py-2">{new Date(order.order_time).toLocaleString()}</td>
+                <td className="px-4 py-2">
+                  {new Date(order.order_time).toLocaleString()}
+                </td>
                 <td className="px-4 py-2">{order.status}</td>
+                {/* <td className="px-4 py-2">
+                  {order.orderRows.map((row, rowIndex) => (
+                    <div key={rowIndex}>
+                      {`${row.fProductID} - ${row.quantity} - ${row.fever}`}
+                    </div>
+                  ))}
+                </td> */}
+                <td className="px-4 py-2">
+                  {`${order.fProductID} - ${order.quantity} - ${order.fever}`}
+                </td>
                 <td className="px-4 py-2">
                   <button
                     onClick={() => handleEdit(index)}

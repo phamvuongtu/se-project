@@ -6,80 +6,46 @@ menuController.use(express.json());
 
 // Route to handle creating a new product
 menuController.post("/product/create", (req, res) => {
-    const { name, description, size, price } = req.body;
-  
-    // Insert the product into the Product table
-    db.query(
-      "INSERT INTO Product (name, description) VALUES (?, ?)",
-      [name, description],
-      (productErr, productResult) => {
-        if (productErr) {
-          console.log(productErr);
-          return res.status(500).send("Error creating product");
-        }
-  
-        const productID = productResult.insertId;
-  
-        // Insert the corresponding fProduct into the FProduct table
-        if (size !== null && price !== null) {
-          // Convert price to a valid float value before inserting
-          const numericPrice = parseFloat(price);
-  
-          if (isNaN(numericPrice)) {
-            return res.status(400).send("Invalid price format");
-          }
-  
-          db.query(
-            "INSERT INTO FProduct (productID, size, price) VALUES (?, ?, ?)",
-            [productID, size, numericPrice],
-            (fProductErr, fProductResult) => {
-              if (fProductErr) {
-                console.log(fProductErr);
-                // Consider rolling back the Product insertion here if needed
-                return res.status(500).send("Error creating fProduct");
-              }
-  
-              const newFProduct = {
-                fProductID: fProductResult.insertId,
-                productID,
-                size,
-                price: numericPrice,
-              };
-  
-              console.log("Newly inserted fProduct:", newFProduct);
-  
-              res.status(201).json({ productID, newFProduct });
-            }
-          );
-        } else {
-          // Only insert NULL values for size and price into FProduct
-          db.query(
-            "INSERT INTO FProduct (productID, size, price) VALUES (?, NULL, NULL)",
-            [productID],
-            (fProductErr, fProductResult) => {
-              if (fProductErr) {
-                console.log(fProductErr);
-                // Consider rolling back the Product insertion here if needed
-                return res.status(500).send("Error creating fProduct");
-              }
-  
-              const newFProduct = {
-                fProductID: fProductResult.insertId,
-                productID,
-                size: null,
-                price: null,
-              };
-  
-              console.log("Newly inserted fProduct:", newFProduct);
-  
-              res.status(201).json({ productID, newFProduct });
-            }
-          );
-        }
+  const { name, description, size, price } = req.body;
+
+  // Insert the product into the Product table
+  db.query(
+    "INSERT INTO Product (name, description) VALUES (?, ?)",
+    [name, description],
+    (productErr, productResult) => {
+      if (productErr) {
+        console.log(productErr);
+        return res.status(500).send("Error creating product");
       }
-    );
-  });
-  
+
+      const productID = productResult.insertId;
+
+      // Insert the corresponding fProduct into the FProduct table
+      db.query(
+        "INSERT INTO FProduct (productID, size, price) VALUES (?, ?, ?)",
+        [productID, size, price],
+        (fProductErr, fProductResult) => {
+          if (fProductErr) {
+            console.log(fProductErr);
+            // Consider rolling back the Product insertion here if needed
+            return res.status(500).send("Error creating fProduct");
+          }
+
+          const newFProduct = {
+            fProductID: fProductResult.insertId,
+            productID,
+            size,
+            price,
+          };
+
+          console.log("Newly inserted fProduct:", newFProduct);
+
+          res.status(201).json({ productID, newFProduct });
+        }
+      );
+    }
+  );
+});
 
 // Route to fetch all products along with their fProducts
 menuController.get("/product/all", (req, res) => {
@@ -127,6 +93,7 @@ menuController.get("/product/all", (req, res) => {
 menuController.put("/product/update/:productID", (req, res) => {
   const productID = req.params.productID;
   const { name, description, size, price } = req.body;
+  console.log({productID, name, description, size, price }); 
 
   // First, check if there are any changes to the values
   db.query(
@@ -140,14 +107,7 @@ menuController.put("/product/update/:productID", (req, res) => {
         res.status(404).send("Product not found");
       } else {
         const product = selectResult[0];
-
-        if (product.name === name && product.description === description) {
-          // No changes to name and description, return success
-          res.send({
-            product: "No changes",
-            fProduct: "No changes",
-          });
-        } else {
+       {
           // Update the product in the Product table
           db.query(
             "UPDATE Product SET name = ?, description = ? WHERE productID = ?",
@@ -167,6 +127,7 @@ menuController.put("/product/update/:productID", (req, res) => {
                         console.log(fErr);
                         res.status(500).send("Error updating FProduct");
                       } else {
+                        console.log("FProduct Result:", fProductResult);
                         res.send({
                           product:
                             productResult.affectedRows > 0
