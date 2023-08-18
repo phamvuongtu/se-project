@@ -14,6 +14,12 @@ app.get("/", (req, res) => {
 const shipperController = require("./controllers/shipperController");
 app.use(shipperController);
 
+const menuController = require("./controllers/menuController");
+app.use(menuController);
+
+const orderController = require("./controllers/orderController");
+app.use(orderController);
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

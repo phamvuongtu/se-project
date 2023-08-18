@@ -1,76 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const Menu = () => {
   const [productList, setProductList] = useState([]);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState('Drink');
-  const [size, setSize] = useState('S');
-  const [price, setPrice] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [size, setSize] = useState("S");
+  const [price, setPrice] = useState("");
   const [editIndex, setEditIndex] = useState(-1);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get("http://localhost:4000/product/all"); // Update the endpoint accordingly
+      setProductList(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const isValidPrice = (input) => {
-    return /^\d+$/.test(input);
+    //return /^\d+$/.test(input);
+    return true;
   };
 
-  const generateProductID = () => {
-    const currentCount = productList.length + 1;
-    return `Pr${currentCount.toString().padStart(3, '0')}`;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name || !price) {
-      setErrorMsg('Name and Price are required fields');
+      setErrorMsg("Name and Price are required fields");
       return;
     }
 
     if (!isValidPrice(price)) {
-      setErrorMsg('Invalid price format (should be a positive integer)');
+      setErrorMsg("Invalid price format (should be a positive integer)");
       return;
     }
 
-    if (editIndex === -1) {
-      const newProduct = { productID: generateProductID(), name, description, type, size, price };
-      setProductList([...productList, newProduct]);
-    } else {
-      const updatedProductList = productList.map((product, index) =>
-        index === editIndex
-          ? { ...product, name, description, type, size, price }
-          : product
-      );
-      setProductList(updatedProductList);
-      setEditIndex(-1);
-    }
+    const requestData = {
+      name,
+      description,
+      size, 
+      price,  
+    };
+    
 
-    setName('');
-    setDescription('');
-    setType('Drink');
-    setSize('S');
-    setPrice('');
-    setErrorMsg('');
+    try {
+      if (editIndex === -1) {
+        await axios.post("http://localhost:4000/product/create", requestData);
+      } else {
+        const productID = productList[editIndex].productID;
+        await axios.put(
+          `http://localhost:4000/product/update/${productID}`,
+          requestData
+        );
+        
+        // After updating the Product table, update the FProduct entry
+        const fProductData = {
+          size: size !== null ? size : "", // Send empty string if size is null
+          price: price !== null ? parseFloat(price) : null, // Send null if price is null
+        };
+        await axios.put(
+          `http://localhost:4000/product/update-fproduct/${productID}`,
+          fProductData
+        );
+      }
+
+      // Delay for a short period before fetching the updated product list
+      setTimeout(() => {
+        fetchProducts();
+      }, 500); // Adjust the delay as needed
+
+      setName("");
+      setDescription("");
+      setSize("S");
+      setPrice("");
+      setEditIndex(-1);
+      setErrorMsg("");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleEdit = (index) => {
     const product = productList[index];
     setName(product.name);
     setDescription(product.description);
-    setType(product.type);
-    setSize(product.size);
-    setPrice(product.price);
+    setSize(product.fProducts[0]?.size || "S");
+    setPrice(product.fProducts[0]?.price.toString() || "");
     setEditIndex(index);
   };
 
-  const handleDelete = (index) => {
-    const updatedProductList = productList.filter((_, i) => i !== index);
-    setProductList(updatedProductList);
-  };
-
-  const handleTypeChange = (e) => {
-    setType(e.target.value);
-    setSize(e.target.value === 'Drink' ? 'S' : '');
+  const handleDelete = async (productID) => {
+    try {
+      await axios.delete(`http://localhost:4000/product/delete/${productID}`);
+      fetchProducts();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -99,31 +130,18 @@ const Menu = () => {
         </div>
 
         <div className="flex mb-2">
-          <div className="w-1/3 pr-2">
-            <label className="block mb-2 font-semibold">Type:</label>
+          <div className="w-1/3 px-2">
+            <label className="block mb-2 font-semibold">Size:</label>
             <select
-              value={type}
-              onChange={handleTypeChange}
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg"
             >
-              <option value="Drink">Drink</option>
-              <option value="Topping">Topping</option>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
             </select>
           </div>
-          {type === 'Drink' && (
-            <div className="w-1/3 px-2">
-              <label className="block mb-2 font-semibold">Size:</label>
-              <select
-                value={size}
-                onChange={(e) => setSize(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg"
-              >
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-              </select>
-            </div>
-          )}
           <div className="w-1/3 pl-2">
             <label className="block mb-2 font-semibold">Price:</label>
             <input
@@ -136,12 +154,12 @@ const Menu = () => {
         </div>
 
         {errorMsg && <p className="text-red-500">{errorMsg}</p>}
-        
+
         <button
           type="submit"
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
         >
-          {editIndex === -1 ? 'Add Product' : 'Update Product'}
+          {editIndex === -1 ? "Add Product" : "Update Product"}
         </button>
       </form>
 
@@ -151,20 +169,26 @@ const Menu = () => {
             <tr className="bg-gray-200">
               <th className="px-4 py-2">Product ID</th>
               <th className="px-4 py-2">Name</th>
-              <th className="px-4 py-2">Type</th>
               <th className="px-4 py-2">Size</th>
               <th className="px-4 py-2">Price</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {productList.slice(0, 15).map((product, index) => (
-              <tr key={index} className={(index % 2 === 0) ? "bg-gray-100" : ""}>
+            {productList.slice(0, 100).map((product, index) => (
+              <tr key={index} className={index % 2 === 0 ? "bg-gray-100" : ""}>
                 <td className="px-4 py-2">{product.productID}</td>
                 <td className="px-4 py-2">{product.name}</td>
-                <td className="px-4 py-2">{product.type}</td>
-                <td className="px-4 py-2">{product.type === 'Drink' ? product.size : '-'}</td>
-                <td className="px-4 py-2">{product.price}</td>
+                <td className="px-4 py-2">
+                  {product.fProducts.length > 0
+                    ? product.fProducts[0].size
+                    : "-"}
+                </td>
+                <td className="px-4 py-2">
+                  {product.fProducts.length > 0
+                    ? product.fProducts[0].price
+                    : "-"}
+                </td>
                 <td className="px-4 py-2">
                   <button
                     onClick={() => handleEdit(index)}
@@ -173,7 +197,7 @@ const Menu = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(index)}
+                    onClick={() => handleDelete(product.productID)}
                     className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
                   >
                     Delete

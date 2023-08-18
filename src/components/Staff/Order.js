@@ -1,70 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const Orders = () => {
-  const [orderList, setOrderList] = useState([]);
-  const [customerID, setCustomerID] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [orderType, setOrderType] = useState('In-store');
-  const [shippingAddress, setShippingAddress] = useState('');
-  const [shipperID, setShipperID] = useState('');
-  const [status, setStatus] = useState('Pending');
-  const [orderRows, setOrderRows] = useState([{ drink: '', size: 'S', topping: '', quantity: '' }]);
-  const [editIndex, setEditIndex] = useState(-1);
-
-  const generateOrderID = () => {
-    const orderCount = orderList.length + 1;
-    const paddedCount = orderCount.toString().padStart(3, '0');
-    return `Or${paddedCount}`;
-  };
-
-  const isValidCustomerID = (input) => {
-    return /^Cu\d{3}$/.test(input);
-  };
-
-  const isValidPhoneNumber = (input) => {
-    return /^0\d{9}$/.test(input);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!isValidCustomerID(customerID) || !isValidPhoneNumber(phoneNumber)) {
-      return;
-    }
-
-    const newOrder = {
-      orderID: editIndex !== -1 ? orderList[editIndex].orderID : generateOrderID(),
-      customerID,
-      phoneNumber,
-      orderType,
-      shippingAddress: orderType === 'Delivery' ? shippingAddress : '',
-      shipperID: orderType === 'Delivery' ? shipperID : '',
-      status,
-      orderRows: orderRows.filter(row => row.drink !== '')
+  const Orders = () => {
+    const [orderList, setOrderList] = useState([]);
+    const [customerID, setCustomerID] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [orderType, setOrderType] = useState('In-store');
+    const [shippingAddress, setShippingAddress] = useState('');
+    const [shipperID, setShipperID] = useState('');
+    const [status, setStatus] = useState('Prepare');
+    const [orderRows, setOrderRows] = useState([{ fProductID: '', quantity: '', fever: '' }]);
+    const [editIndex, setEditIndex] = useState(-1);
+  
+    const fetchOrderList = async () => {
+      try {
+        const response = await axios.get('http://localhost:4000/order/all');
+        setOrderList(response.data);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      }
     };
-
-    if (editIndex === -1) {
-      setOrderList([...orderList, newOrder]);
-    } else {
-      const updatedOrderList = orderList.map((order, index) =>
-        index === editIndex ? newOrder : order
-      );
-      setOrderList(updatedOrderList);
-      setEditIndex(-1);
-    }
-
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setCustomerID('');
-    setPhoneNumber('');
-    setOrderType('In-store');
-    setShippingAddress('');
-    setShipperID('');
-    setStatus('Pending');
-    setOrderRows([{ drink: '', size: 'S', topping: '', quantity: '' }]);
-  };
+  
+    useEffect(() => {
+      fetchOrderList();
+    }, []);
+  
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+  
+      const newOrder = {
+        customerID,
+        shipperID: orderType === 'Delivery' ? shipperID : null,
+        shipType: orderType,
+        totalPrice: 0, // You need to calculate the total price
+        status,
+        customerName: '', // Add customer name
+        phoneNumber,
+        address: orderType === 'Delivery' ? shippingAddress : '',
+        deliveryNote: '', // Add delivery note
+        orderRows: orderRows.filter(row => row.fProductID !== ''),
+      };
+  
+      try {
+        if (editIndex === -1) {
+          await axios.post('http://localhost:4000/order/create', newOrder);
+        } else {
+          await axios.put(`http://localhost:4000/order/update/${orderList[editIndex].orderID}`, newOrder);
+        }
+  
+        resetForm();
+        fetchOrderList();
+      } catch (error) {
+        console.error('Error submitting order:', error);
+      }
+    };
+  
+    const resetForm = () => {
+      setCustomerID('');
+      setPhoneNumber('');
+      setOrderType('In-store');
+      setShippingAddress('');
+      setShipperID('');
+      setStatus('Prepare');
+      setOrderRows([{ fProductID: '', quantity: '', fever: '' }]);
+    };
 
   const handleAddRow = () => {
     setOrderRows([...orderRows, { drink: '', size: 'S', topping: '', quantity: '' }]);
@@ -157,9 +156,10 @@ const Orders = () => {
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg"
             >
-              <option value="Pending">Pending</option>
-              <option value="On-going">On-going</option>
-              <option value="Done">Done</option>
+              <option value="Prepare">Prepare</option>
+              <option value="Delivering">Delivering</option>
+              <option value="Success">Success</option>
+              <option value="Fail">Fail</option>
             </select>
           </div>
           {orderRows.map((row, index) => (
@@ -272,7 +272,7 @@ const Orders = () => {
                 <td className="px-4 py-2">{order.orderID}</td>
                 <td className="px-4 py-2">{order.customerID}</td>
                 <td className="px-4 py-2">{order.shipperID}</td>
-                <td className="px-4 py-2">{new Date().toLocaleString()}</td>
+                <td className="px-4 py-2">{new Date(order.order_time).toLocaleString()}</td>
                 <td className="px-4 py-2">{order.status}</td>
                 <td className="px-4 py-2">
                   <button
