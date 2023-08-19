@@ -295,7 +295,7 @@ const Orders = () => {
       <div className="max-h-96 overflow-auto">
         <table className="w-full border">
           <thead>
-            <tr className="bg-gray-200">
+          <tr className="bg-gray-200" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
               <th className="px-4 py-2">Order ID</th>
               <th className="px-4 py-2">Customer ID</th>
               <th className="px-4 py-2">Shipper ID</th>

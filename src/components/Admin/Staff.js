@@ -163,7 +163,8 @@ const Staff = () => {
       <div className="max-h-96 overflow-y-auto">
         <table className="w-full border">
           <thead>
-            <tr className="bg-gray-200">
+          <tr className="bg-gray-200" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+
               <th className="px-4 py-2">Staff ID</th>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Email</th>
