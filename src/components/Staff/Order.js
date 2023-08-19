@@ -281,59 +281,62 @@ const Orders = () => {
       </form>
 
       {/* Table */}
-      <h2 className="text-xl font-semibold mb-2">Order List</h2>
-      <div className="max-h-96 overflow-auto">
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="px-4 py-2">Order ID</th>
-              <th className="px-4 py-2">Customer ID</th>
-              <th className="px-4 py-2">Shipper ID</th>
-              <th className="px-4 py-2">Creation Time</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Order Details</th>
-              <th className="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orderList.map((order, index) => (
-              <tr key={index} className={index % 2 === 0 ? "bg-gray-100" : ""}>
-                <td className="px-4 py-2">{order.orderID}</td>
-                <td className="px-4 py-2">{order.customerID}</td>
-                <td className="px-4 py-2">{order.shipperID}</td>
-                <td className="px-4 py-2">
-                  {new Date(order.order_time).toLocaleString()}
-                </td>
-                <td className="px-4 py-2">{order.status}</td>
-                {/* <td className="px-4 py-2">
-                  {order.orderRows.map((row, rowIndex) => (
-                    <div key={rowIndex}>
-                      {`${row.fProductID} - ${row.quantity} - ${row.fever}`}
-                    </div>
-                  ))}
-                </td> */}
-                <td className="px-4 py-2">
-                  {`${order.fProductID} - ${order.quantity} - ${order.fever}`}
-                </td>
-                <td className="px-4 py-2">
-                  <button
-                    onClick={() => handleEdit(index)}
-                    className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(index)}
-                    className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Table */}
+<h2 className="text-xl font-semibold mb-2">Order List</h2>
+<div className="max-h-96 overflow-auto">
+  <table className="w-full border">
+    <thead>
+      <tr className="bg-gray-200">
+        <th className="px-4 py-2">Order ID</th>
+        <th className="px-4 py-2">Customer ID</th>
+        <th className="px-4 py-2">Shipper ID</th>
+        <th className="px-4 py-2">Creation Time</th>
+        <th className="px-4 py-2">Status</th>
+        <th className="px-4 py-2">Order Details</th>
+        <th className="px-4 py-2">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {orderList.map((order, index) => (
+        <tr key={index} className={index % 2 === 0 ? "bg-gray-100" : ""}>
+          <td className="px-4 py-2">{order.orderID}</td>
+          <td className="px-4 py-2">{order.customerID}</td>
+          <td className="px-4 py-2">{order.shipperID}</td>
+          <td className="px-4 py-2">
+            {new Date(order.order_time).toLocaleString()}
+          </td>
+          <td className="px-4 py-2">{order.status}</td>
+          <td className="px-4 py-2">
+      {order.orderRows ? (
+        order.orderRows.map((row, rowIndex) => (
+          <div key={rowIndex}>
+            {`${row.fProductID} - ${row.quantity} - ${row.fever}`}
+          </div>
+        ))
+      ) : (
+        <div>No order details available</div>
+      )}
+    </td>
+          <td className="px-4 py-2">
+            <button
+              onClick={() => handleEdit(index)}
+              className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 mr-2"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => handleDelete(index)}
+              className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
     </div>
   );
 };
