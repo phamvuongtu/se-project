@@ -4,40 +4,24 @@ const db = require("../database");
 const orderController = express.Router();
 
 // Route to create a new order
-// orderController.post("/order/create", async (req, res) => {
-//   try {
-//     const newOrder = req.body;
-//     const orderRows = newOrder.orderRows; // Extract orderRows from the request
-
-//     // Create the order in the Order_Info table
-//     const insertOrderQuery = 'INSERT INTO Order_Info SET ?';
-//     const result = await db.query(insertOrderQuery, newOrder);
-
-//     const orderID = result.insertId;
-
-//     // Create order supply entries in the Order_Supply table
-//     const orderSupplyValues = orderRows.map((row) => [
-//       row.fProductID,
-//       orderID,
-//       row.quantity,
-//       row.fever || 'None'
-//     ]);
-//     const insertOrderSupplyQuery = 'INSERT INTO Order_Supply (fProductID, orderID, quantity, fever) VALUES ?';
-//     await db.query(insertOrderSupplyQuery, [orderSupplyValues]);
-
-//     res.status(201).json({ message: 'Order created successfully', orderID });
-//   } catch (error) {
-//     console.error('Error creating order:', error);
-//     res.status(500).json({ message: 'Internal server error' });
-//   }
-// });
 orderController.post("/order/create", (req, res) => {
   const newOrder = req.body;
-  const orderRows = newOrder.orderRows; // Extract orderRows from the request
+  const orderRows = newOrder.orderRows;
 
   // Create the order in the Order_Info table
-  const insertOrderQuery = 'INSERT INTO Order_Info SET ?';
-  db.query(insertOrderQuery, newOrder, (error, result) => {
+  const insertOrderQuery = 'INSERT INTO Order_Info (customerID, shipperID, shipType, status, customerName, phoneNumber, address, deliveryNote) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+  const orderValues = [
+    newOrder.customerID,
+    newOrder.shipperID || null,
+    newOrder.shipType || "Normal",
+    newOrder.status,
+    newOrder.customerName,
+    newOrder.phoneNumber,
+    newOrder.address,
+    newOrder.deliveryNote || ""
+  ];
+  
+  db.query(insertOrderQuery, orderValues, (error, result) => {
     if (error) {
       console.error('Error creating order:', error);
       res.status(500).json({ message: 'Internal server error' });
@@ -96,6 +80,7 @@ orderController.get("/order/all", (req, res) => {
 orderController.delete("/order/delete/:orderID", async (req, res) => {
   try {
     const orderID = req.params.orderID;
+    console.log(orderID);
 
     // Delete the order from the Order_Info table
     const orderDeleteQuery = "DELETE FROM Order_Info WHERE orderID = ?";
@@ -104,6 +89,7 @@ orderController.delete("/order/delete/:orderID", async (req, res) => {
     // Delete the associated order items from the Order_Supply table
     const orderItemsDeleteQuery = "DELETE FROM Order_Supply WHERE orderID = ?";
     await db.query(orderItemsDeleteQuery, orderID);
+
 
     res.send("Order deleted successfully");
   } catch (error) {
