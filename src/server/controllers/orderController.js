@@ -4,33 +4,66 @@ const db = require("../database");
 const orderController = express.Router();
 
 // Route to create a new order
-orderController.post("/order/create", async (req, res) => {
-  try {
-    const newOrder = req.body;
-    const orderRows = newOrder.orderRows; // Extract orderRows from the request
+// orderController.post("/order/create", async (req, res) => {
+//   try {
+//     const newOrder = req.body;
+//     const orderRows = newOrder.orderRows; // Extract orderRows from the request
 
-    // Create the order in the Order_Info table
-    const insertOrderQuery = 'INSERT INTO Order_Info SET ?';
-    const result = await db.query(insertOrderQuery, newOrder);
+//     // Create the order in the Order_Info table
+//     const insertOrderQuery = 'INSERT INTO Order_Info SET ?';
+//     const result = await db.query(insertOrderQuery, newOrder);
 
-    const orderID = result.insertId;
+//     const orderID = result.insertId;
 
-    // Create order supply entries in the Order_Supply table
-    const orderSupplyValues = orderRows.map((row) => [
-      row.fProductID,
-      orderID,
-      row.quantity,
-      row.fever || 'None'
-    ]);
-    const insertOrderSupplyQuery = 'INSERT INTO Order_Supply (fProductID, orderID, quantity, fever) VALUES ?';
-    await db.query(insertOrderSupplyQuery, [orderSupplyValues]);
+//     // Create order supply entries in the Order_Supply table
+//     const orderSupplyValues = orderRows.map((row) => [
+//       row.fProductID,
+//       orderID,
+//       row.quantity,
+//       row.fever || 'None'
+//     ]);
+//     const insertOrderSupplyQuery = 'INSERT INTO Order_Supply (fProductID, orderID, quantity, fever) VALUES ?';
+//     await db.query(insertOrderSupplyQuery, [orderSupplyValues]);
 
-    res.status(201).json({ message: 'Order created successfully', orderID });
-  } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
+//     res.status(201).json({ message: 'Order created successfully', orderID });
+//   } catch (error) {
+//     console.error('Error creating order:', error);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
+orderController.post("/order/create", (req, res) => {
+  const newOrder = req.body;
+  const orderRows = newOrder.orderRows; // Extract orderRows from the request
+
+  // Create the order in the Order_Info table
+  const insertOrderQuery = 'INSERT INTO Order_Info SET ?';
+  db.query(insertOrderQuery, newOrder, (error, result) => {
+    if (error) {
+      console.error('Error creating order:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    } else {
+      const orderID = result.insertId;
+
+      // Create order supply entries in the Order_Supply table
+      const orderSupplyValues = orderRows.map((row) => [
+        row.fProductID,
+        orderID,
+        row.quantity,
+        row.fever || 'None'
+      ]);
+      const insertOrderSupplyQuery = 'INSERT INTO Order_Supply (fProductID, orderID, quantity, fever) VALUES ?';
+      db.query(insertOrderSupplyQuery, [orderSupplyValues], (supplyError) => {
+        if (supplyError) {
+          console.error('Error creating order supply:', supplyError);
+          res.status(500).json({ message: 'Internal server error' });
+        } else {
+          res.status(201).json({ message: 'Order created successfully', orderID });
+        }
+      });
+    }
+  });
 });
+
 
 // Route to fetch all orders
 orderController.get("/order/all", (req, res) => {

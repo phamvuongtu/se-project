@@ -11,6 +11,10 @@ app.get("/", (req, res) => {
   res.send("Hello, world!");
 });
 
+
+const userController = require("./controllers/userController")
+app.post('/auth/login', userController.handleLoging)
+
 const shipperController = require("./controllers/shipperController");
 app.use(shipperController);
 

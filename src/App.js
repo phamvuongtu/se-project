@@ -8,7 +8,7 @@ import LoginPage from "./components/LoginPage";
 import Staff from "./components/Admin/Staff";
 import Shipper from "./components/Admin/Shipper";
 import Menu from "./components/Admin/Menu";
-import Statistic from "./components/Admin/Statistic";
+// import Statistic from "./components/Admin/Statistic";
 import Order from "./components/Staff/Order";
 import Customer from "./components/Staff/Customer";
 
@@ -23,7 +23,7 @@ function App() {
           <Route path="admin/staff" element={<Staff/>} />
           <Route path="admin/shipper" element={<Shipper />} />
           <Route path="admin/menu" element={<Menu />} />
-          <Route path="admin/statistic" element={<Statistic />} />
+          {/* <Route path="admin/statistic" element={<Statistic />} /> */}
           <Route path="order" element={<Order />} />
           <Route path="customer" element={<Customer />} />
         </Route>

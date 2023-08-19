@@ -14,11 +14,28 @@ const LoginPage = () => {
       const response = await axios.post("http://localhost:4000/auth/login", data);
       console.log('check',response.data.userData.errCode)
       if(response.data.userData.errCode === 0){
-        navigate("/")
-      }
-      // Xử lý dữ liệu trả về từ response ở đây
+        if(response.data.userData.user.role === "Admin")
+          navigate("/")
+        else navigate('/customer')
+      }else{
+        // Handle error messages based on errCode
+        switch (response.data.userData.errCode) {
+          case 1:
+            setErrorMessage("Username does not exist");
+            break;
+          case 2:
+            setErrorMessage("User not found");
+            break;
+          case 3:
+            setErrorMessage("Wrong password");
+            break;
+          default:
+            setErrorMessage("An error occurred");
+      }}
+
     } catch (error) {
-      // Xử lý lỗi ở đây
+      console.error('Error:', error);
+      setErrorMessage("An error occurred");
     } 
     if (!email || !password) {
       setErrorMessage("Email, Password are required fields");
@@ -26,8 +43,8 @@ const LoginPage = () => {
     }
     
     //console.log(email)
-    // setEmail("");
-    // setPassword("");
+    setEmail("");
+    setPassword("");
     setErrorMessage("");
   };
 

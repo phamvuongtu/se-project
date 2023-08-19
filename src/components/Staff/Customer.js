@@ -23,6 +23,7 @@ const Customer = () => {
     e.preventDefault();
 
     if (!name || !email || !password || !address || !phoneNumber) {
+      setErrorMsg('Missing required field');
       return;
     }
 

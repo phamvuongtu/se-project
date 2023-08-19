@@ -37,7 +37,7 @@ let handleUserLogin = async (email, password) => {
 
 let getUserByEmail = (email) => {
     return new Promise((resolve, reject) => {
-        db.query("SELECT email,password FROM User_Account WHERE email = ?", email, (err, results) => {
+        db.query("SELECT email,password, role FROM User_Account WHERE email = ?", email, (err, results) => {
             if (err) {
                 reject(err);
             } else {

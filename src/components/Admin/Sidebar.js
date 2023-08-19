@@ -98,7 +98,7 @@ function Sidebar() {
             <span>Menu</span>
           </a>
 
-          <a
+          {/* <a
             href="/admin/statistic"
             className="flex items-center gap-1 px-5 py-2 relative before:absolute before:top-0 before:left-0 before:w-1 before:h-full"
           >
@@ -119,7 +119,7 @@ function Sidebar() {
               />
             </svg>
             <span>Statistic</span>
-          </a>
+          </a> */}
 
           <a
             href="/order"
