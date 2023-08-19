@@ -24,8 +24,7 @@ const Menu = () => {
   }, []);
 
   const isValidPrice = (input) => {
-    //return /^\d+$/.test(input);
-    return true;
+    return /^\d+(\.\d{1,2})?$/.test(input);
   };
 
   const handleSubmit = async (e) => {
@@ -74,7 +73,6 @@ const Menu = () => {
       setSize("S");
       setPrice("");
       setEditIndex(-1);
-      setErrorMsg("");
     } catch (error) {
       console.error(error);
     }
@@ -146,9 +144,7 @@ const Menu = () => {
             />
           </div>
         </div>
-
         {errorMsg && <p className="text-red-500">{errorMsg}</p>}
-
         <button
           type="submit"
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"

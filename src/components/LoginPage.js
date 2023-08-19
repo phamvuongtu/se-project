@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
-const LoginPage = () => {
+const LoginPage = ({ setRole }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     const data = { email, password };
@@ -17,10 +17,11 @@ const LoginPage = () => {
       );
       console.log("check", response.data.userData.errCode);
       if (response.data.userData.errCode === 0) {
-        if (response.data.userData.user.role === "Admin") navigate("/");
-        else navigate("/customer");
+        const userRole = response.data.userData.user.role;
+        setRole(userRole);
       } else {
         // Handle error messages based on errCode
+        console.log(response.data.userData.errCode);
         switch (response.data.userData.errCode) {
           case 1:
             setErrorMessage("Username does not exist");
@@ -47,7 +48,7 @@ const LoginPage = () => {
     //console.log(email)
     setEmail("");
     setPassword("");
-    setErrorMessage("");
+    // setErrorMessage("");
   };
 
   return (
@@ -115,6 +116,7 @@ const LoginPage = () => {
                   {errorMessage}
                 </p>
               )}
+              {console.log(errorMessage)}
               <button
                 type="submit"
                 className="w-full text-FFE3B8 bg-3B2415 hover:bg-392614 focus:ring-4 focus:outline-none focus:ring-392614 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-3B2415 dark:hover:bg-392614 dark:focus:ring-392614"
