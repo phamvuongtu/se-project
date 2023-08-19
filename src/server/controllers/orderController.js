@@ -80,16 +80,14 @@ orderController.get("/order/all", (req, res) => {
 orderController.delete("/order/delete/:orderID", async (req, res) => {
   try {
     const orderID = req.params.orderID;
-    console.log(orderID);
 
-    // Delete the order from the Order_Info table
-    const orderDeleteQuery = "DELETE FROM Order_Info WHERE orderID = ?";
-    await db.query(orderDeleteQuery, orderID);
-
-    // Delete the associated order items from the Order_Supply table
+    // Delete the associated order items from the Order_Supply table first
     const orderItemsDeleteQuery = "DELETE FROM Order_Supply WHERE orderID = ?";
     await db.query(orderItemsDeleteQuery, orderID);
 
+    // Now delete the order from the Order_Info table
+    const orderDeleteQuery = "DELETE FROM Order_Info WHERE orderID = ?";
+    await db.query(orderDeleteQuery, orderID);
 
     res.send("Order deleted successfully");
   } catch (error) {
@@ -97,5 +95,6 @@ orderController.delete("/order/delete/:orderID", async (req, res) => {
     res.status(500).send("Error deleting order");
   }
 });
+
 
 module.exports = orderController;
